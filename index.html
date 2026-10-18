@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Sala de Video - Totalmente Configurable</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #f0f0f0;
+      --free: #2e7d32;
+      --reserved: #f57c00;
+      --sold: #c62828;
+      --accent: #3d5afe;
+      --excel: #1d6f42;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header-bar {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0; font-size: 1.35rem; }
+    h2 { margin: 24px 0 12px 0; font-size: 1.15rem; text-align: center; color: #ccc; }
+    .btn-config {
+      background: #2c2c2c;
+      border: 1px solid #444;
+      width: auto;
+      padding: 7px 12px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+    }
+    .panel, .stats, .history-panel {
+      background: var(--card);
+      padding: 14px 16px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 16px;
+      box-sizing: border-box;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    label { font-size: 0.8rem; color: #aaa; }
+    select, input, button {
+      background: #2c2c2c;
+      color: white;
+      border: 1px solid #444;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    button { cursor: pointer; border: none; font-weight: bold; transition: opacity 0.15s; }
+    button:hover { opacity: 0.9; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 0.88rem;
+      text-align: center;
+    }
+    .stats-cash {
+      grid-column: span 3;
+      border-top: 1px solid #333;
+      padding-top: 8px;
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-around;
+      font-size: 0.95rem;
+    }
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 12px;
+    }
+    .btn-save-history { background: var(--accent); flex: 2; }
+    .btn-reset { background: #424242; flex: 1; }
+    .btn-excel { background: var(--excel); margin-top: 10px; }
+    .btn-clear-hist { background: #5c1818; margin-top: 8px; font-size: 0.8rem; padding: 6px; }
+    .screen {
+      background: linear-gradient(to bottom, #ffffff44, transparent);
+      width: 100%;
+      max-width: 420px;
+      height: 28px;
+      border-top: 3px solid #fff;
+      border-radius: 50% 50% 0 0;
+      text-align: center;
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      color: #aaa;
+      margin-bottom: 24px;
+      padding-top: 6px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 20px;
+    }
+    .seat {
+      aspect-ratio: 1;
+      border-radius: 8px 8px 4px 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      font-weight: bold;
+      padding: 4px;
+      text-align: center;
+      transition: transform 0.1s;
+      position: relative;
+      min-height: 54px;
+    }
+    .seat:active { transform: scale(0.95); }
+    .seat.free { background: var(--free); }
+    .seat.reserved { background: var(--reserved); }
+    .seat.sold { background: var(--sold); }
+    .seat small {
+      font-size: 0.65rem;
+      font-weight: normal;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+    .snack-badge {
+      background: rgba(0, 0, 0, 0.55);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.62rem;
+      margin-top: 3px;
+      color: #ffd54f;
+    }
+    /* Tabla Historial */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+    th, td {
+      padding: 8px 5px;
+      border-bottom: 1px solid #333;
+    }
+    th { color: #aaa; font-weight: 600; }
+    .btn-del-row {
+      background: transparent;
+      color: #ef5350;
+      padding: 2px 6px;
+      width: auto;
+      font-size: 0.9rem;
+    }
+    .summary-total {
+      margin-top: 12px;
+      text-align: right;
+      font-size: 1rem;
+      color: #81c784;
+    }
+    /* Modales */
+    .modal-bg {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none; justify-content: center; align-items: center;
+      z-index: 10;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    .modal {
+      background: var(--card);
+      padding: 18px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+    .modal h3 { margin: 0; }
+    .config-section-title {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #90caf9;
+      margin-top: 6px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px;
+    }
+    .snacks-box {
+      background: #252525;
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .snack-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+    }
+    .snack-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-qty {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 6px;
+      background: #3d3d3d;
+      font-size: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .snack-qty {
+      min-width: 18px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .modal-summary {
+      background: #161616;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .modal-summary-total {
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: #ffd54f;
+      border-top: 1px solid #333;
+      padding-top: 4px;
+      margin-top: 2px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .modal-actions { display: flex; flex-direction: column; gap: 7px; }
+    .btn-sell { background: var(--sold); }
+    .btn-reserve { background: var(--reserved); }
+    .btn-free { background: var(--free); }
+    /* Filas de edición en configuración */
+    .menu-edit-row {
+      display: grid;
+      grid-template-columns: 1fr 75px 32px;
+      gap: 6px;
+      align-items: center;
+    }
+    .show-edit-row {
+      display: grid;
+      grid-template-columns: 1fr 32px;
+      gap: 6px;
+      align-items: center;
+    }
+    .menu-edit-row input, .show-edit-row input {
+      padding: 7px 8px;
+      font-size: 0.85rem;
+    }
+    .btn-del-item {
+      background: #4a2020;
+      color: #ff8a80;
+      height: 34px;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .btn-add-item {
+      background: #2e4a31;
+      color: #a5d6a7;
+      font-size: 0.83rem;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <h1>🎬 Sala de Video</h1>
+    <button class="btn-config" onclick="openAppConfig()">⚙️ Configurar Sala</button>
+  </div>
+
+  <!-- Configuración de Función -->
+  <div class="panel">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Fecha:</label>
+        <input type="date" id="showDate" onchange="saveShowMeta()">
+      </div>
+      <div class="form-group">
+        <label>Función / Horario:</label>
+        <select id="showSelect" onchange="loadShow()"></select>
+      </div>
+      <div class="form-group">
+        <label>Nombre de la Película:</label>
+        <input type="text" id="movieTitle" placeholder="Ej. Gladiador II" oninput="saveShowMeta()">
+      </div>
+      <div class="form-group">
+        <label>Precio Entrada ($):</label>
+        <input type="number" id="ticketPrice" value="5" min="0" step="0.5" onchange="saveShowMeta(); updateStats()">
+      </div>
+    </div>
+  </div>
+
+  <div class="screen">PANTALLA</div>
+
+  <!-- Mapa de Sillas -->
+  <div class="grid" id="seatGrid"></div>
+
+  <!-- Estadísticas en Vivo -->
+  <div class="stats">
+    <div>🟢 Libres: <b id="countFree">0</b></div>
+    <div>🟠 Reservas: <b id="countRes">0</b></div>
+    <div>🔴 Vendidas: <b id="countSold">0</b></div>
+    <div class="stats-cash">
+      <span>🎟️ Boletas: $<b id="cashTickets">0.00</b></span>
+      <span>🍿 Snacks: $<b id="cashSnacks">0.00</b></span>
+      <span>💰 Caja: $<b id="totalCash">0.00</b></span>
+    </div>
+  </div>
+
+  <!-- Botones de Acción de Tanda -->
+  <div class="actions-bar">
+    <button class="btn-save-history" onclick="closeAndSaveShow()">✅ Cerrar Función y Guardar</button>
+    <button class="btn-reset" onclick="resetShow()">🔄 Limpiar</button>
+  </div>
+
+  <!-- Panel de Historial y Exportación -->
+  <h2>📊 Historial de Ventas</h2>
+  <div class="history-panel">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tanda</th>
+            <th>Película</th>
+            <th>Vend.</th>
+            <th>Boletas</th>
+            <th>Snacks</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+    <div class="summary-total">
+      Total Acumulado: $<b id="grandTotal">0.00</b>
+    </div>
+    <button class="btn-excel" onclick="exportToCSV()">📥 Descargar Reporte en Excel (CSV)</button>
+    <button class="btn-clear-hist" onclick="clearAllHistory()">🗑️ Borrar Todo el Historial</button>
+  </div>
+
+  <!-- Modal de Gestión de Silla + Snacks -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <h3 id="modalTitle">Silla #1</h3>
+      <input type="text" id="clientName" placeholder="Nombre del cliente (opcional)">
+      
+      <label>🍿 Agregar Snacks / Bebidas:</label>
+      <div class="snacks-box" id="snacksList"></div>
+
+      <div class="modal-summary">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Entrada:</span>
+          <span>$<b id="modalTicketPrice">0.00</b></span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Snacks:</span>
+          <span>$<b id="modalSnacksPrice">0.00</b></span>
+        </div>
+        <div class="modal-summary-total">
+          <span>Total Silla:</span>
+          <span>$<b id="modalTotalSeat">0.00</b></span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-sell" onclick="setSeatStatus('sold')">💵 Vender / Confirmar Pago</button>
+        <button class="btn-reserve" onclick="setSeatStatus('reserved')">📌 Reservar Silla</button>
+        <button class="btn-free" onclick="setSeatStatus('free')">🟢 Liberar Silla</button>
+        <button onclick="closeModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Configuración General (Sala + Horarios + Snacks) -->
+  <div class="modal-bg" id="appConfigModalBg">
+    <div class="modal">
+      <h3>⚙️ Configuración General</h3>
+      
+      <div class="config-section-title">🪑 Distribución de la Sala</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Total de Sillas:</label>
+          <input type="number" id="cfgTotalSeats" min="1" max="200" value="20">
+        </div>
+        <div class="form-group">
+          <label>Sillas por Fila (Columnas):</label>
+          <input type="number" id="cfgCols" min="1" max="15" value="5">
+        </div>
+      </div>
+
+      <div class="config-section-title">🎬 Funciones / Horarios</div>
+      <div class="snacks-box" id="showsConfigList"></div>
+      <button class="btn-add-item" onclick="addShowRow()">➕ Agregar Función / Horario</button>
+
+      <div class="config-section-title">🍿 Menú de Snacks y Precios ($)</div>
+      <div class="snacks-box" id="snacksConfigList"></div>
+      <button class="btn-add-item" onclick="addSnackRow()">➕ Agregar Nuevo Producto</button>
+
+      <div class="modal-actions" style="margin-top: 8px;">
+        <button class="btn-save-history" onclick="saveAppConfig()">💾 Guardar Configuración</button>
+        <button onclick="closeAppConfig()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_SHOWS = [
+      'Tanda 1 (Tarde)',
+      'Tanda 2 (Noche)',
+      'Especial Fin de Semana'
+    ];
+
+    const DEFAULT_SNACKS = [
+      { id: 'popcorn', name: '🍿 Crispetas / Palomitas', price: 3.00 },
+      { id: 'soda',    name: '🥤 Gaseosa / Refresco',    price: 2.00 },
+      { id: 'hotdog',  name: '🌭 Perro Caliente',        price: 3.50 },
+      { id: 'nachos',  name: '🧀 Nachos con Queso',      price: 3.50 },
+      { id: 'candy',   name: '🍫 Agua / Dulce',          price: 1.50 }
+    ];
+
+    let roomConfig = { totalSeats: 20, cols: 5 };
+    let showList = [];
+    let tempConfigShows = [];
+    let snackMenu = [];
+    let tempConfigMenu = [];
+    let currentShow = '';
+    let selectedSeatIndex = null;
+    let tempSnacks = {};
+    let seatsData = [];
+    let salesHistory = [];
+
+    function init() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('showDate').value = today;
+      loadRoomConfig();
+      loadShowList();
+      loadSnackMenu();
+      loadHistory();
+      loadShow();
+    }
+
+    // --- CONFIGURACIÓN DE SALA, HORARIOS Y SNACKS ---
+    function loadRoomConfig() {
+      const saved = localStorage.getItem('sala_room_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        roomConfig.totalSeats = Math.max(1, parseInt(parsed.totalSeats) || 20);
+        roomConfig.cols = Math.max(1, parseInt(parsed.cols) || 5);
+      }
+      applyGridColumns();
+    }
+
+    function applyGridColumns() {
+      const grid = document.getElementById('seatGrid');
+      grid.style.gridTemplateColumns = `repeat(${roomConfig.cols}, 1fr)`;
+    }
+
+    function loadShowList() {
+      const saved = localStorage.getItem('sala_shows_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        showList = (Array.isArray(parsed) && parsed.length > 0) ? parsed : [...DEFAULT_SHOWS];
+      } else {
+        showList = [...DEFAULT_SHOWS];
+      }
+      renderShowSelect();
+    }
+
+    function renderShowSelect(preferredShow) {
+      const select = document.getElementById('showSelect');
+      const target = (preferredShow && showList.includes(preferredShow)) ? preferredShow : showList[0];
+      select.innerHTML = '';
+      showList.forEach(showName => {
+        const opt = document.createElement('option');
+        opt.value = showName;
+        opt.textContent = showName;
+        if (showName === target) opt.selected = true;
+        select.appendChild(opt);
+      });
+      currentShow = select.value;
+    }
+
+    function loadSnackMenu() {
+      const saved = localStorage.getItem('sala_snack_menu');
+      if (saved) {
+        snackMenu = JSON.parse(saved);
+      } else {
+        snackMenu = JSON.parse(JSON.stringify(DEFAULT_SNACKS));
+      }
+    }
+
+    function openAppConfig() {
+      document.getElementById('cfgTotalSeats').value = roomConfig.totalSeats;
+      document.getElementById('cfgCols').value = roomConfig.cols;
+      
+      // Clonar shows guardando el nombre original para migrar datos si se renombra
+      tempConfigShows = showList.map(name => ({ oldName: name, name: name }));
+      tempConfigMenu = JSON.parse(JSON.stringify(snackMenu));
+      
+      renderShowsConfigList();
+      renderSnacksConfigList();
+      document.getElementById('appConfigModalBg').style.display = 'flex';
+    }
+
+    function closeAppConfig() {
+      document.getElementById('appConfigModalBg').style.display = 'none';
+    }
+
+    // Editor de Funciones / Horarios
+    function renderShowsConfigList() {
+      const container = document.getElementById('showsConfigList');
+      container.innerHTML = '';
+
+      if (tempConfigShows.length === 0) {
+        container.innerHTML = '<small style="color:#888; text-align:center;">Agrega al menos una función.</small>';
+        return;
+      }
+
+      tempConfigShows.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'show-edit-row';
+        row.innerHTML = `
+          <input type="text" value="${item.name.replace(/"/g, '&quot;')}" placeholder="Nombre de la función/horario" oninput="updateTempShow(${idx}, this.value)">
+          <button class="btn-del-item" onclick="removeShowRow(${idx})" title="Eliminar">🗑️</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function updateTempShow(idx, val) {
+      tempConfigShows[idx].name = val;
+    }
+
+    function addShowRow() {
+      tempConfigShows.push({
+        oldName: null,
+        name: `Tanda ${tempConfigShows.length + 1}`
+      });
+      renderShowsConfigList();
+    }
+
+    function removeShowRow(idx) {
+      if (tempConfigShows.length <= 1) {
+        alert('Debe existir al menos una función / horario.');
+        return;
+      }
+      tempConfigShows.splice(idx, 1);
+      renderShowsConfigList();
+    }
+
+    // Editor de Snacks
+    function renderSnacksConfigList() {
+      const container = document.getElementById('snacksConfigList');
+      container.innerHTML = '';
+
+      if (tempConfigMenu.length === 0) {
+        container.innerHTML = '<small style="color:#888; text-align:center;">No hay snacks configurados.</small>';
+        return;
+      }
+
+      tempConfigMenu.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'menu-edit-row';
+        row.innerHTML = `
+          <input type="text" value="${item.name.replace(/"/g, '&quot;')}" placeholder="Nombre producto" oninput="updateTempSnack(${idx}, 'name', this.value)">
+          <input type="number" value="${item.price}" min="0" step="0.5" placeholder="Precio" oninput="updateTempSnack(${idx}, 'price', this.value)">
+          <button class="btn-del-item" onclick="removeSnackRow(${idx})" title="Eliminar">🗑️</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function updateTempSnack(idx, field, val) {
+      if (field === 'price') {
+        tempConfigMenu[idx].price = parseFloat(val) || 0;
+      } else {
+        tempConfigMenu[idx].name = val;
+      }
+    }
+
+    function addSnackRow() {
+      tempConfigMenu.push({
+        id: 'item_' + Date.now() + '_' + Math.floor(Math.random() * 100),
+        name: '🍿 Nuevo Producto',
+        price: 2.00
+      });
+      renderSnacksConfigList();
+    }
+
+    function removeSnackRow(idx) {
+      tempConfigMenu.splice(idx, 1);
+      renderSnacksConfigList();
+    }
+
+    function saveAppConfig() {
+      const newTotal = Math.max(1, Math.min(200, parseInt(document.getElementById('cfgTotalSeats').value) || 20));
+      const newCols = Math.max(1, Math.min(15, parseInt(document.getElementById('cfgCols').value) || 5));
+
+      // Validar funciones no vacías y sin duplicados
+      const validShows = [];
+      const seenNames = new Set();
+      tempConfigShows.forEach(item => {
+        const clean = item.name.trim();
+        if (clean && !seenNames.has(clean)) {
+          seenNames.add(clean);
+          validShows.push({ oldName: item.oldName, name: clean });
+        }
+      });
+
+      if (validShows.length === 0) {
+        alert('Debes dejar al menos una función / horario con nombre válido.');
+        return;
+      }
+
+      // Verificar si al reducir sillas se perderían sillas ocupadas en la tanda actual
+      if (newTotal < seatsData.length) {
+        const removedSeats = seatsData.slice(newTotal);
+        const hasOccupied = removedSeats.some(s => s.status !== 'free');
+        if (hasOccupied) {
+          if (!confirm('⚠️ Hay sillas vendidas o reservadas en los últimos números que vas a eliminar. ¿Deseas continuar de todos modos?')) {
+            return;
+          }
+        }
+      }
+
+      // Migrar datos en localStorage si se renombró alguna función
+      let nextSelectedShow = currentShow;
+      validShows.forEach(item => {
+        if (item.oldName && item.oldName !== item.name) {
+          const oldSeats = localStorage.getItem('sala_seats_' + item.oldName);
+          const oldMeta = localStorage.getItem('sala_meta_' + item.oldName);
+          if (oldSeats !== null) {
+            localStorage.setItem('sala_seats_' + item.name, oldSeats);
+            localStorage.removeItem('sala_seats_' + item.oldName);
+          }
+          if (oldMeta !== null) {
+            localStorage.setItem('sala_meta_' + item.name, oldMeta);
+            localStorage.removeItem('sala_meta_' + item.oldName);
+          }
+          if (currentShow === item.oldName) {
+            nextSelectedShow = item.name;
+          }
+        }
+      });
+
+      showList = validShows.map(item => item.name);
+      localStorage.setItem('sala_shows_list', JSON.stringify(showList));
+
+      roomConfig.totalSeats = newTotal;
+      roomConfig.cols = newCols;
+      localStorage.setItem('sala_room_config', JSON.stringify(roomConfig));
+      applyGridColumns();
+
+      // Redimensionar todas las funciones activas al nuevo total de sillas
+      showList.forEach(showName => {
+        const key = 'sala_seats_' + showName;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          let arr = JSON.parse(saved);
+          arr = resizeSeatsArray(arr, newTotal);
+          localStorage.setItem(key, JSON.stringify(arr));
+        }
+      });
+
+      // Guardar menú de snacks
+      snackMenu = tempConfigMenu.filter(item => item.name.trim() !== '');
+      localStorage.setItem('sala_snack_menu', JSON.stringify(snackMenu));
+
+      renderShowSelect(nextSelectedShow);
+      closeAppConfig();
+      loadShow();
+    }
+
+    function resizeSeatsArray(arr, targetLength) {
+      if (arr.length === targetLength) return arr;
+      if (arr.length > targetLength) {
+        return arr.slice(0, targetLength);
+      }
+      const extra = Array.from({ length: targetLength - arr.length }, (_, i) => ({
+        id: arr.length + i + 1,
+        status: 'free',
+        client: '',
+        snacks: {}
+      }));
+      return [...arr, ...extra];
+    }
+
+    // --- GESTIÓN DE TANDAS Y SILLAS ---
+    function getStorageKey() { return 'sala_seats_' + currentShow; }
+    function getMetaKey() { return 'sala_meta_' + currentShow; }
+
+    function loadShow() {
+      currentShow = document.getElementById('showSelect').value;
+      
+      const savedSeats = localStorage.getItem(getStorageKey());
+      if (savedSeats) {
+        let loaded = JSON.parse(savedSeats).map(s => ({
+          ...s,
+          snacks: s.snacks || {}
+        }));
+        seatsData = resizeSeatsArray(loaded, roomConfig.totalSeats);
+      } else {
+        seatsData = Array.from({ length: roomConfig.totalSeats }, (_, i) => ({
+          id: i + 1,
+          status: 'free',
+          client: '',
+          snacks: {}
+        }));
+      }
+
+      const savedMeta = localStorage.getItem(getMetaKey());
+      if (savedMeta) {
+        const meta = JSON.parse(savedMeta);
+        if (meta.date) document.getElementById('showDate').value = meta.date;
+        document.getElementById('movieTitle').value = meta.movie || '';
+        document.getElementById('ticketPrice').value = meta.price ?? 5;
+      } else {
+        document.getElementById('movieTitle').value = '';
+      }
+
+      renderGrid();
+      updateStats();
+    }
+
+    function saveShowMeta() {
+      const meta = {
+        date: document.getElementById('showDate').value,
+        movie: document.getElementById('movieTitle').value,
+        price: parseFloat(document.getElementById('ticketPrice').value) || 0
+      };
+      localStorage.setItem(getMetaKey(), JSON.stringify(meta));
+    }
+
+    function saveShow() {
+      localStorage.setItem(getStorageKey(), JSON.stringify(seatsData));
+      renderGrid();
+      updateStats();
+    }
+
+    function getSeatSnacksTotal(snacksObj) {
+      if (!snacksObj) return 0;
+      return snackMenu.reduce((sum, item) => {
+        const qty = snacksObj[item.id] || 0;
+        return sum + (qty * item.price);
+      }, 0);
+    }
+
+    function formatSeatSnacksText(snacksObj) {
+      if (!snacksObj) return '';
+      const parts = [];
+      snackMenu.forEach(item => {
+        const qty = snacksObj[item.id] || 0;
+        if (qty > 0) {
+          const cleanName = item.name.replace(/^[^\w\sÁÉÍÓÚáéíóúÑñ]+\s*/, '');
+          parts.push(`${qty}x ${cleanName}`);
+        }
+      });
+      return parts.join(' + ');
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('seatGrid');
+      grid.innerHTML = '';
+      seatsData.forEach((seat, index) => {
+        const snackTotal = getSeatSnacksTotal(seat.snacks);
+        const div = document.createElement('div');
+        div.className = `seat ${seat.status}`;
+        div.innerHTML = `
+          <span>S-${seat.id}</span>
+          <small>${seat.client || (seat.status === 'free' ? 'Libre' : seat.status === 'sold' ? 'Pagado' : 'Reserva')}</small>
+          ${snackTotal > 0 ? `<div class="snack-badge">🍿 $${snackTotal.toFixed(2)}</div>` : ''}
+        `;
+        div.onclick = () => openModal(index);
+        grid.appendChild(div);
+      });
+    }
+
+    function openModal(index) {
+      selectedSeatIndex = index;
+      const seat = seatsData[index];
+      document.getElementById('modalTitle').innerText = `Silla S-${seat.id}`;
+      document.getElementById('clientName').value = seat.client;
+      
+      tempSnacks = { ...(seat.snacks || {}) };
+      renderModalSnacks();
+      document.getElementById('modalBg').style.display = 'flex';
+    }
+
+    function renderModalSnacks() {
+      const container = document.getElementById('snacksList');
+      container.innerHTML = '';
+
+      if (snackMenu.length === 0) {
+        container.innerHTML = '<small style="color:#888;">Sin productos. Usa el botón de Configuración arriba.</small>';
+      } else {
+        snackMenu.forEach(item => {
+          const qty = tempSnacks[item.id] || 0;
+          const row = document.createElement('div');
+          row.className = 'snack-item';
+          row.innerHTML = `
+            <span>${item.name} ($${item.price.toFixed(2)})</span>
+            <div class="snack-controls">
+              <button class="btn-qty" onclick="changeSnackQty('${item.id}', -1)">-</button>
+              <span class="snack-qty">${qty}</span>
+              <button class="btn-qty" onclick="changeSnackQty('${item.id}', 1)">+</button>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      const ticketPrice = parseFloat(document.getElementById('ticketPrice').value) || 0;
+      const snacksPrice = getSeatSnacksTotal(tempSnacks);
+
+      document.getElementById('modalTicketPrice').innerText = ticketPrice.toFixed(2);
+      document.getElementById('modalSnacksPrice').innerText = snacksPrice.toFixed(2);
+      document.getElementById('modalTotalSeat').innerText = (ticketPrice + snacksPrice).toFixed(2);
+    }
+
+    function changeSnackQty(snackId, delta) {
+      const current = tempSnacks[snackId] || 0;
+      const next = Math.max(0, current + delta);
+      if (next === 0) {
+        delete tempSnacks[snackId];
+      } else {
+        tempSnacks[snackId] = next;
+      }
+      renderModalSnacks();
+    }
+
+    function closeModal() {
+      document.getElementById('modalBg').style.display = 'none';
+      selectedSeatIndex = null;
+    }
+
+    function setSeatStatus(status) {
+      if (selectedSeatIndex === null) return;
+      const name = document.getElementById('clientName').value.trim();
+      seatsData[selectedSeatIndex].status = status;
+      seatsData[selectedSeatIndex].client = status === 'free' ? '' : name;
+      seatsData[selectedSeatIndex].snacks = status === 'free' ? {} : { ...tempSnacks };
+      saveShow();
+      closeModal();
+    }
+
+    function updateStats() {
+      const price = parseFloat(document.getElementById('ticketPrice').value) || 0;
+      const free = seatsData.filter(s => s.status === 'free').length;
+      const res = seatsData.filter(s => s.status === 'reserved').length;
+      const soldSeats = seatsData.filter(s => s.status === 'sold');
+      const soldCount = soldSeats.length;
+
+      const ticketsCash = soldCount * price;
+      const snacksCash = soldSeats.reduce((sum, s) => sum + getSeatSnacksTotal(s.snacks), 0);
+
+      document.getElementById('countFree').innerText = free;
+      document.getElementById('countRes').innerText = res;
+      document.getElementById('countSold').innerText = soldCount;
+      document.getElementById('cashTickets').innerText = ticketsCash.toFixed(2);
+      document.getElementById('cashSnacks').innerText = snacksCash.toFixed(2);
+      document.getElementById('totalCash').innerText = (ticketsCash + snacksCash).toFixed(2);
+    }
+
+    function resetShow() {
+      if (confirm('¿Vaciar todas las sillas de esta tanda sin guardar en el historial?')) {
+        seatsData = seatsData.map(s => ({ ...s, status: 'free', client: '', snacks: {} }));
+        saveShow();
+      }
+    }
+
+    // --- FUNCIONES DE HISTORIAL Y EXPORTACIÓN ---
+    function loadHistory() {
+      const saved = localStorage.getItem('sala_sales_history');
+      salesHistory = saved ? JSON.parse(saved) : [];
+      renderHistory();
+    }
+
+    function saveHistory() {
+      localStorage.setItem('sala_sales_history', JSON.stringify(salesHistory));
+      renderHistory();
+    }
+
+    function closeAndSaveShow() {
+      const soldSeats = seatsData.filter(s => s.status === 'sold');
+      const soldCount = soldSeats.length;
+
+      if (soldCount === 0) {
+        alert('No hay sillas vendidas en esta función para registrar.');
+        return;
+      }
+
+      const date = document.getElementById('showDate').value || new Date().toISOString().split('T')[0];
+      const movie = document.getElementById('movieTitle').value.trim() || 'Sin título';
+      const price = parseFloat(document.getElementById('ticketPrice').value) || 0;
+      
+      const ticketsTotal = soldCount * price;
+      const snacksTotal = soldSeats.reduce((sum, s) => sum + getSeatSnacksTotal(s.snacks), 0);
+      const grandTotal = ticketsTotal + snacksTotal;
+
+      const detailsList = soldSeats.map(s => {
+        const snackTxt = formatSeatSnacksText(s.snacks);
+        const clientTxt = s.client ? ` (${s.client})` : '';
+        const snackInfo = snackTxt ? ` [${snackTxt}]` : '';
+        return `S-${s.id}${clientTxt}${snackInfo}`;
+      }).join('; ');
+
+      const record = {
+        id: Date.now(),
+        date: date,
+        show: currentShow,
+        movie: movie,
+        sold: soldCount,
+        price: price,
+        ticketsTotal: ticketsTotal,
+        snacksTotal: snacksTotal,
+        total: grandTotal,
+        details: detailsList
+      };
+
+      salesHistory.unshift(record);
+      saveHistory();
+
+      if (confirm(`✅ Función guardada:\n🎟️ Entradas: $${ticketsTotal.toFixed(2)}\n🍿 Snacks: $${snacksTotal.toFixed(2)}\n💰 Total: $${grandTotal.toFixed(2)}\n\n¿Deseas limpiar las sillas ahora para la siguiente función?`)) {
+        seatsData = seatsData.map(s => ({ ...s, status: 'free', client: '', snacks: {} }));
+        document.getElementById('movieTitle').value = '';
+        saveShowMeta();
+        saveShow();
+      }
+    }
+
+    function renderHistory() {
+      const tbody = document.getElementById('historyBody');
+      tbody.innerHTML = '';
+      let grandTotal = 0;
+
+      if (salesHistory.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#777;">Sin registros guardados aún</td></tr>';
+      } else {
+        salesHistory.forEach(item => {
+          const tTotal = item.ticketsTotal ?? (item.sold * item.price);
+          const sTotal = item.snacksTotal ?? 0;
+          grandTotal += item.total;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.date}</td>
+            <td>${item.show}</td>
+            <td>${item.movie}</td>
+            <td>${item.sold}</td>
+            <td>$${tTotal.toFixed(2)}</td>
+            <td>$${sTotal.toFixed(2)}</td>
+            <td><b>$${item.total.toFixed(2)}</b></td>
+            <td><button class="btn-del-row" onclick="deleteHistoryRow(${item.id})" title="Eliminar fila">✖</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+
+    function deleteHistoryRow(id) {
+      if (confirm('¿Eliminar este registro del historial?')) {
+        salesHistory = salesHistory.filter(item => item.id !== id);
+        saveHistory();
+      }
+    }
+
+    function clearAllHistory() {
+      if (salesHistory.length === 0) return;
+      if (confirm('⚠️ ¿Estás seguro de borrar TODO el historial de ventas? Te recomendamos descargar el Excel antes de hacerlo.')) {
+        salesHistory = [];
+        saveHistory();
+      }
+    }
+
+    function exportToCSV() {
+      if (salesHistory.length === 0) {
+        alert('No hay datos en el historial para exportar.');
+        return;
+      }
+
+      const headers = [
+        'Fecha',
+        'Funcion/Horario',
+        'Pelicula',
+        'Sillas Vendidas',
+        'Precio Entrada Unitario ($)',
+        'Ingreso Entradas ($)',
+        'Ingreso Snacks ($)',
+        'Total Recaudado ($)',
+        'Detalle Sillas y Consumos'
+      ];
+      
+      const rows = salesHistory.map(item => {
+        const tTotal = item.ticketsTotal ?? (item.sold * item.price);
+        const sTotal = item.snacksTotal ?? 0;
+        const details = item.details || item.clients || '';
+        return [
+          item.date,
+          `"${item.show.replace(/"/g, '""')}"`,
+          `"${item.movie.replace(/"/g, '""')}"`,
+          item.sold,
+          item.price.toFixed(2),
+          tTotal.toFixed(2),
+          sTotal.toFixed(2),
+          item.total.toFixed(2),
+          `"${details.replace(/"/g, '""')}"`
+        ];
+      });
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const today = new Date().toISOString().split('T')[0];
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Reporte_Sala_Video_${today}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    init();
+  </script>
+</body>
+</html>
